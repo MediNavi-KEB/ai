@@ -1,9 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Union
-from pydantic import BaseModel, Field
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from translate import chain
+from message_dto import Input_ms
+from rag import search
 
 app = FastAPI()
 
@@ -16,39 +15,6 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-
-class MessageBase(BaseModel):
-    content: str
-    additional_kwargs: dict = {}
-    response_metadata: dict = {}
-    name: str
-    id: str
-    example: bool = False
-
-
-class HumanMessage(MessageBase):
-    type: str = "human"
-
-
-class AIMessage(MessageBase):
-    type: str = "ai"
-    tool_calls: List = []
-    invalid_tool_calls: List = []
-    usage_metadata: dict = {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "total_tokens": 0
-    }
-
-
-class SystemMessage(MessageBase):
-    type: str = "system"
-
-
-class Input_ms(BaseModel):
-    messages: List[Union[HumanMessage, AIMessage, SystemMessage]]
-
-
 @app.post("/api/translate")
 async def invoke_chain(data: Input_ms):
     try:
@@ -60,7 +26,11 @@ async def invoke_chain(data: Input_ms):
         input_text = data.messages[0].content
         print(f"Input to model: {input_text}")
 
-        result = chain.invoke({"input": input_text})
+        # faiss index 사용
+        additional_info = search(input_text, 10)
+        print(additional_info)
+
+        result = chain.invoke({"input": input_text, "additional_info": additional_info})
 
         # 모델의 응답 로그에 남김
         print(f"Raw result from model: {result}")
