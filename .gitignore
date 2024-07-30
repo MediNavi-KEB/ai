@@ -483,4 +483,4 @@ cython_debug/
 #.idea/
 
 #etc
-.bin
+data/faiss_index1.bin
