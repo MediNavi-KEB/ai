@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from translate import chain
 from message_dto import Input_ms
-from rag import search
+from rag import search, calculate_weighted_scores
 
 app = FastAPI()
 
@@ -26,9 +26,11 @@ async def invoke_chain(data: Input_ms):
         input_text = data.messages[0].content
         print(f"Input to model: {input_text}")
 
-        # faiss index 사용
-        additional_info = search(input_text, 10)
-        print(additional_info)
+        search_results = search(input_text, top_k=100)
+        print(search_results)
+        weighted_scores = calculate_weighted_scores(search_results)
+        print(weighted_scores)
+        additional_info = weighted_scores.iloc[0]
 
         result = chain.invoke({"input": input_text, "additional_info": additional_info})
 
