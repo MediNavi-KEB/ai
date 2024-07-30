@@ -26,26 +26,28 @@ async def invoke_chain(data: Input_ms):
         input_text = data.messages[0].content
         print(f"Input to model: {input_text}")
 
+        # faiss 검색
         search_results = search(input_text, top_k=100)
-        print(search_results)
-        weighted_scores = calculate_weighted_scores(search_results)
-        print(weighted_scores)
-        additional_info = weighted_scores.iloc[0]
+        # 거리가 30 이내인 결과 필터링
+        filtered_results = search_results[search_results['거리'] < 30]
 
-        result = chain.invoke({"input": input_text, "additional_info": additional_info})
+        # 필터링된 결과가 30개 이상인지 확인
+        if len(filtered_results) >= 30:
+            # 가중치 계산
+            weighted_scores = calculate_weighted_scores(filtered_results)
+            print("Weighted Scores:", weighted_scores)
 
-        # 모델의 응답 로그에 남김
-        print(f"Raw result from model: {result}")
+            # 상위 3개 항목 추출
+            top_diseases = weighted_scores.head(3)
+            disease_names = top_diseases['병명'].tolist()
 
-        result = result.split("참고:")[0].strip()
+            # 모델의 응답 로그에 남김
+            print(f"disease_names: {disease_names}")
 
-        # 결과 데이터 길이 제한
-        max_length = 500  # 원하는 길이로 설정
-        if len(result) > max_length:
-            result = result[:max_length] + "..."
-
-        print("Result:", result)
-        return {"output": result}
+            return {"output": disease_names}
+        else:
+            print("증상을 이해할 수 없습니다. 다시 입력해주세요.")
+            return {"output": "증상을 이해할 수 없습니다. 다시 입력해주세요."}
     except Exception as e:
         print("Error:", e)
         raise HTTPException(status_code=500, detail=str(e))
