@@ -1,8 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from translate import chain
 from message_dto import Input_ms, DiseaseRequest
 from rag import search, calculate_weighted_scores
+from db.session import get_db
+from db.model.user import User  # User 모델을 import
 
 app = FastAPI()
 
@@ -14,7 +17,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
 
 @app.post("/api/translate")
 async def invoke_chain(data: Input_ms):
