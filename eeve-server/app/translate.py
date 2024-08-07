@@ -7,9 +7,8 @@ llm_eeve = ChatOllama(model='EEVE:latest') # EEVE:latest
 
 prompt = ChatPromptTemplate.from_template(
     "당신 해당 질병에 대해서 2문장 이내로 설명을 해야합니다.,"
-    "문장 앞에 번호를 붙히고 2번까지만 출력하도록 합니다.,"
     "100자를 이내로 답변을 해주세요.,"
-    # "그 외에 다른 부연 설명은 필요하지 않습니다.,"
+    "그 외에 다른 부연 설명은 필요하지 않습니다.,"
     "신뢰도는 출력하지 않습니다.,"
     "사용자의 입력에만 응답합니다: \n {input}"
 )
@@ -17,9 +16,8 @@ prompt = ChatPromptTemplate.from_template(
 prompt2 = ChatPromptTemplate.from_template(
     "당신은 의사입니다."
     "해당 질병에 대해서 3문장 이내로 설명을 해야합니다.,"
-    "문장 앞에 번호를 붙히고 3번까지만 출력하도록 합니다.,"
     "100자를 이내로 답변을 해주세요.,"
-    # "그 외에 다른 부연 설명은 필요하지 않습니다.,"
+    "그 외에 다른 부연 설명은 필요하지 않습니다.,"
     "신뢰도는 출력하지 않습니다.,"
     "사용자의 입력에만 응답합니다: \n {input}"
 )
