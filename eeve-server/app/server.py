@@ -1,22 +1,16 @@
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, HTTPException, Depends
 from translate import chain, chain2
 from message_dto import ChatUserInput
 from rag import search, calculate_weighted_scores
+from fastapi.responses import StreamingResponse
+import asyncio
+import logging
+import re
 
-app = FastAPI()
-
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
+ai_router = APIRouter(tags=["AI"])
 
 
-@app.post("/api/disease_recommendation")
+@ai_router.post("/disease_recommendation")
 async def disease_recommendation(request: ChatUserInput):
     try:
         # 디버깅을 위해 입력 내용 로그에 남김
@@ -51,26 +45,49 @@ async def disease_recommendation(request: ChatUserInput):
         print("Error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.post("/api/hospital_recommendation")
-async def hospital_recommendation(request: ChatUserInput):
-    print(request)
-    disease = request.input
-    result = chain.invoke({"input": disease})
-    print(result)
-    return {"description": result}
+def remove_numbers(text):
+    return re.sub(r'[1-3]', '', text)
 
 
-@app.post("/api/disease-advice")
-async def deisease_advice(request: ChatUserInput):
-    print(request)
+async def generate_response1(data: str):
+    try:
+        for token in chain.stream({"input": data}):
+            token = remove_numbers(token)  # 번호 제거
+            print(token)
+            yield token
+            # await asyncio.sleep(0.1)  # 딜레이 추가
+    except Exception as e:
+        yield f"Error: {str(e)}"
+# async def generate_response1(data: str):
+#     try:
+#         response = ""
+#         for token in chain.stream({"input": data}):
+#             response += token.replace("\n", "")  # 줄바꿈을 제거
+#             print(token, end="", flush=True)  # 터미널에 출력할 때도 줄바꿈을 제거
+#             yield response
+#     except Exception as e:
+#         yield f"Error: {str(e)}"
+
+@ai_router.post("/disease-advice")
+async def disease_advice(request: ChatUserInput):
     data = request.input
-    result = chain2.invoke({"input": data})
-    print(result)
-    return {"description": result}
+    return StreamingResponse(generate_response1(data), media_type="text/plain")
 
 
-if __name__ == "__main__":
-    import uvicorn
+async def generate_response2(data: str):
+    try:
+        for token in chain2.stream({"input": data}):
+            token = remove_numbers(token)  # 번호 제거
+            print(token)
+            yield token
+            # await asyncio.sleep(0.1)  # 딜레이 추가
+    except Exception as e:
+        yield f"Error: {str(e)}"
 
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+
+@ai_router.post("/hospital_recommendation")
+async def hospital_recommendation(request: ChatUserInput):
+    data = request.input
+    return StreamingResponse(generate_response2(data), media_type="text/plain")
+
+
