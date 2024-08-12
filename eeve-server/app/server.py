@@ -45,28 +45,15 @@ async def disease_recommendation(request: ChatUserInput):
         print("Error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-def remove_numbers(text):
-    return re.sub(r'[1-3]', '', text)
-
 
 async def generate_response1(data: str):
     try:
         for token in chain.stream({"input": data}):
-            token = remove_numbers(token)  # 번호 제거
             print(token)
             yield token
             # await asyncio.sleep(0.1)  # 딜레이 추가
     except Exception as e:
         yield f"Error: {str(e)}"
-# async def generate_response1(data: str):
-#     try:
-#         response = ""
-#         for token in chain.stream({"input": data}):
-#             response += token.replace("\n", "")  # 줄바꿈을 제거
-#             print(token, end="", flush=True)  # 터미널에 출력할 때도 줄바꿈을 제거
-#             yield response
-#     except Exception as e:
-#         yield f"Error: {str(e)}"
 
 @ai_router.post("/disease-advice")
 async def disease_advice(request: ChatUserInput):
@@ -77,7 +64,6 @@ async def disease_advice(request: ChatUserInput):
 async def generate_response2(data: str):
     try:
         for token in chain2.stream({"input": data}):
-            token = remove_numbers(token)  # 번호 제거
             print(token)
             yield token
             # await asyncio.sleep(0.1)  # 딜레이 추가
