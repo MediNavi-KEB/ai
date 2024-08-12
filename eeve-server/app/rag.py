@@ -7,7 +7,7 @@ import torch
 from transformers import DistilBertTokenizer, DistilBertModel
 import faiss
 
-file_path = '../../data/total_data_240723.csv'
+file_path = '../../data/total_data_240812.csv'
 df = pd.read_csv(file_path)
 
 # 증상 문장 전처리 함수 (특수 문자 제거만 수행): , .
@@ -38,7 +38,7 @@ def embed_passages_in_batches(passages, batch_size):
         all_embeddings.append(batch_embeddings)
     return torch.cat(all_embeddings, dim=0)
 
-faiss_index_path = '../../data/faiss_index1.bin'
+faiss_index_path = '../../data/faiss_index2.bin'
 index = faiss.read_index(faiss_index_path)
 
 # 유사 증상 검색 함수
@@ -52,7 +52,7 @@ def search(query, top_k=5):
     similarities = similarities[0]
 
     # 검색된 결과를 데이터프레임으로 정리
-    results = df.iloc[indices][['병명']]
+    results = df.iloc[indices][['질병']]
     results['거리'] = similarities
 
     return results.reset_index(drop=True)
@@ -80,7 +80,7 @@ def calculate_weighted_scores(data):
     df['가중 점수'] = df['거리'] * df['가중치']
 
     # 각 병명별 가중 점수 합계 계산
-    disease_weighted_sum = df.groupby('병명')['가중 점수'].sum().reset_index()
+    disease_weighted_sum = df.groupby('질병')['가중 점수'].sum().reset_index()
 
     # 가중 점수 합계 기준으로 정렬
     disease_weighted_sum = disease_weighted_sum.sort_values(by='가중 점수', ascending=False).reset_index(drop=True)

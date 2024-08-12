@@ -30,7 +30,7 @@ async def disease_recommendation(request: ChatUserInput):
 
             # 상위 3개 항목 추출
             top_diseases = weighted_scores.head(3)
-            disease_names = top_diseases['병명'].tolist()
+            disease_names = top_diseases['질병'].tolist()
 
             # 모델의 응답 로그에 남김
             print(f"disease_names: {disease_names}")
