@@ -20,8 +20,8 @@ async def disease_recommendation(request: ChatUserInput):
         # faiss 검색
         search_results = search(input_text, top_k=100)
         # 거리가 30 이내인 결과 필터링
-        filtered_results = search_results[search_results['거리'] < 30]
-
+        filtered_results = search_results[search_results['거리'] < 20]
+        print(filtered_results)
         # 필터링된 결과가 30개 이상인지 확인
         if len(filtered_results) >= 30:
             # 가중치 계산

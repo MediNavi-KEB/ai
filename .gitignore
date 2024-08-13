@@ -485,3 +485,4 @@ cython_debug/
 #etc
 data/faiss_index1.bin
 data/faiss_index2.bin
+data/faiss_index3.bin
