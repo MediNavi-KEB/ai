@@ -57,34 +57,24 @@ def search(query, top_k=5):
 
     return results.reset_index(drop=True)
 
+
 def calculate_weighted_scores(data):
-    """
-    주어진 데이터에 대해 순위와 가중치를 계산하고 각 질병에 대해 가중치를 고려한 합을 반환하는 함수.
 
-    Parameters:
-    data (dict): 병명, 증상, 거리 데이터를 포함하는 딕셔너리.
-
-    Returns:
-    pd.DataFrame: 병명별 가중 점수의 합계가 포함된 데이터프레임.
-    """
-    # 데이터프레임 생성
     df = data.copy()
 
-    # 거리 기준으로 순위 계산 (거리가 낮을수록 높은 순위)
-    df['순위'] = df.index + 1
+    # 질병별 빈도수 계산
+    disease_counts = df['질병'].value_counts().reset_index()
+    disease_counts.columns = ['질병', '빈도수']
 
-    # 순위에 따라 가중치 계산 (순위가 낮을수록 높은 가중치)
-    df['가중치'] = 1 / df['순위']
-
-    # 가중 점수 계산 (거리 * 가중치)
+    # 거리 기준으로 순위 및 가중치 계산
+    df['순위'] = df['거리'].rank(method='min', ascending=True)
+    df['가중치'] = df['순위'] / df['순위'].max()
     df['가중 점수'] = df['거리'] * df['가중치']
 
-    # 각 병명별 가중 점수 합계 계산
-    disease_weighted_sum = df.groupby('질병')['가중 점수'].sum().reset_index()
+    # 각 병명별 가중 점수 평균 계산
+    disease_weighted_avg = df.groupby('질병')['가중 점수'].mean().reset_index()
+    merge_disease = pd.merge(disease_weighted_avg, disease_counts, on='질병')
+    merge_disease['최종 추천 점수'] = merge_disease['가중 점수'] / merge_disease['빈도수']
 
-    # 가중 점수 합계 기준으로 정렬
-    disease_weighted_sum = disease_weighted_sum.sort_values(by='가중 점수', ascending=False).reset_index(drop=True)
-
-    return disease_weighted_sum
-
-
+    result = merge_disease.sort_values(by='최종 추천 점수').reset_index(drop=True)
+    return result

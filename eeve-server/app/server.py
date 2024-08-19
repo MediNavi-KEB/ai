@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from translate import chain, chain2
+from translate import chain
 from message_dto import ChatUserInput
 from rag import search, calculate_weighted_scores
 from fastapi.responses import StreamingResponse
@@ -19,11 +19,12 @@ async def disease_recommendation(request: ChatUserInput):
 
         # faiss 검색
         search_results = search(input_text, top_k=100)
-        # 거리가 30 이내인 결과 필터링
+        # 거리가 20 이내인 결과 필터링
         filtered_results = search_results[search_results['거리'] < 20]
         print(filtered_results)
-        # 필터링된 결과가 30개 이상인지 확인
-        if len(filtered_results) >= 30:
+
+        # 필터링된 결과가 50개 이상인지 확인
+        if len(filtered_results) >= 50:
             # 가중치 계산
             weighted_scores = calculate_weighted_scores(filtered_results)
             print("Weighted Scores:", weighted_scores)
@@ -46,34 +47,18 @@ async def disease_recommendation(request: ChatUserInput):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def generate_response1(data: str):
+# 실시간으로 챗봇화면에 챗봇 응답이 보여지도록 token 형태로 데이터 전달
+async def generate_response(data: str):
     try:
         for token in chain.stream({"input": data}):
             print(token)
             yield token
-            # await asyncio.sleep(0.1)  # 딜레이 추가
     except Exception as e:
         yield f"Error: {str(e)}"
 
+
+# 질병 관련 조언 API
 @ai_router.post("/disease-advice")
 async def disease_advice(request: ChatUserInput):
     data = request.input
-    return StreamingResponse(generate_response1(data), media_type="text/plain")
-
-
-async def generate_response2(data: str):
-    try:
-        for token in chain2.stream({"input": data}):
-            print(token)
-            yield token
-            # await asyncio.sleep(0.1)  # 딜레이 추가
-    except Exception as e:
-        yield f"Error: {str(e)}"
-
-
-@ai_router.post("/hospital_recommendation")
-async def hospital_recommendation(request: ChatUserInput):
-    data = request.input
-    return StreamingResponse(generate_response2(data), media_type="text/plain")
-
-
+    return StreamingResponse(generate_response(data), media_type="text/plain")
